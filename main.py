@@ -13,7 +13,7 @@ def factory_to_constraints(solver, factory):
         """
         Helper for converting a node and item to the symbolic variable name.
         """
-        return str(node.id) + "_" + item + "_" + p
+        return str(node.id) + "_" + item + "_p"
     symbs = {}
     for node in factory.nodes:
         if node.name == "inserter" or node.name == "assembler":
@@ -42,7 +42,8 @@ def factory_to_constraints(solver, factory):
                 for item in node.sources[0].items_produced:
                     # TODO: update INSERTER_THROUGHPUTS, match real const name
                     for throughput in INSERTER_THROUGHPUTS:
-                        # TODO: 
+                        # TODO: finish implementing this
+                        pass
 
             case "assembler":
                 # Assemblers produce only one item, therefore only constraints
