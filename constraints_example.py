@@ -8,33 +8,35 @@ asm1_spd = Real('asm1_spd')
 asm2_spd = Real('asm2_spd')
 
 
-SOURCE_P = 1000000
-IN_P1 = 0.79
-IN_P2 = 1.03 # TODO: adjust these!
-IN_P3 = 5
+SOURCE_P = 100
+IN_P1 = 3
+IN_P2 = 4.95 # TODO: adjust these!
+IN_P3 = 6
 ASM_S1 = 0.5
 ASM_S2 = 0.75 # TODO: adjust these!
 ASM_S3 = 1.25
 
 ASM1_R1 = 1 # quantity for asm1 recipe ingredient 1, etc.
 ASM1_R2 = 1
-ASM1_RT = 0.1 # time for asm1 recipe
+ASM1_RT = 1 # time for asm1 recipe
 
 ASM2_R1 = 1
 ASM2_R2 = 1
-ASM2_RT = 0.1
+ASM2_RT = 1
 
 
 # Solver.
 s = Optimize()
 
 # in1 constraints
-s.add(Or(in1_p == IN_P1, in1_p == IN_P2, in1_p == IN_P3))
+s.add(Or(in1_p == IN_P1, in1_p == IN_P2, in1_p == IN_P3, in1_p == SOURCE_P))
 s.add(in1_p <= SOURCE_P)
+s.add(in1_p <= IN_P3)
 
 # in2 constraints
-s.add(Or(in2_p == IN_P1, in2_p == IN_P2, in2_p == IN_P3))
+s.add(Or(in2_p == IN_P1, in2_p == IN_P2, in2_p == IN_P3, in2_p <= SOURCE_P))
 s.add(in2_p <= SOURCE_P)
+s.add(in2_p <= IN_P3)
 
 # asm1 constraints
 s.add(Or(asm1_spd == ASM_S1, asm1_spd == ASM_S2, asm1_spd == ASM_S3))
@@ -43,12 +45,14 @@ s.add(in2_p >= ASM1_R2 * asm1_spd / ASM1_RT)
 
 
 # in3 constraints
-s.add(Or(in3_p == IN_P1, in3_p == IN_P2, in3_p == IN_P3))
+s.add(Or(in3_p == IN_P1, in3_p == IN_P2, in3_p == IN_P3, in3_p == SOURCE_P))
 s.add(in3_p <= SOURCE_P)
+s.add(in3_p <= IN_P3)
 
 # in4 constraints
-s.add(Or(in4_p == IN_P1, in4_p == IN_P2, in4_p == IN_P3))
+s.add(Or(in4_p == IN_P1, in4_p == IN_P2, in4_p == IN_P3, in4_p == SOURCE_P))
 s.add(in4_p <= SOURCE_P)
+s.add(in4_p <= IN_P3)
 
 # asm4 constraints
 s.add(Or(asm2_spd == ASM_S1, asm2_spd == ASM_S2, asm2_spd == ASM_S3))
