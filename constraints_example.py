@@ -9,20 +9,20 @@ asm2_spd = Real('asm2_spd')
 
 
 SOURCE_P = 100
-IN_P1 = 3
-IN_P2 = 4.95 # TODO: adjust these!
-IN_P3 = 6
+IN_P1 = 0.5
+IN_P2 = 0.75 # TODO: adjust these!
+IN_P3 = 1.5
 ASM_S1 = 0.5
 ASM_S2 = 0.75 # TODO: adjust these!
 ASM_S3 = 1.25
 
 ASM1_R1 = 1 # quantity for asm1 recipe ingredient 1, etc.
 ASM1_R2 = 1
-ASM1_RT = 1 # time for asm1 recipe
+ASM1_RT = 0.1 # time for asm1 recipe
 
 ASM2_R1 = 1
 ASM2_R2 = 1
-ASM2_RT = 1
+ASM2_RT = 0.5
 
 
 # Solver.
