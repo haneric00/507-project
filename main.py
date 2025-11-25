@@ -153,6 +153,18 @@ def factory_to_constraints(solver, factory):
 
     return symbs
 
+
+
+# Example use! The following factory looks like this:
+"""
+chest(copper) > inserter V
+                    assembler(electronic-circuit)
+chest(iron) > inserter ^                V
+                                    inserter
+                                        V
+chest(iron)  >   inserter >   assembler(display-panel)
+"""
+
 solver = Optimize()
 
 factory = Factory()
