@@ -28,12 +28,12 @@ class Recipe:
 class FactoryNode:
     id_iter = itertools.count()
 
-    def __init__(self, name, prod = [('fish', 1)], recipe = None):
+    def __init__(self, name, prod = set(), recipe = None, sources = set()):
         self.id = next(FactoryNode.id_iter)
         self.name = name # Just the component type, e.g. assembler
-        self.items_produced = prod
+        self.items_produced = prod # set of names of items produced
         self.recipe = Recipe.from_str(recipe) if recipe else None
-        self.inputs = set()
+        self.sources = sources
         self.factory = None
 
     
@@ -55,8 +55,11 @@ class FactoryNode:
             node.factory.add_node(inserter)
             inserter.factory = node.factory
 
-        self.inputs.add(inserter)
-        inserter.inputs.add(node)
+        self.sources.add(inserter)
+        inserter.sources.add(node)
+
+    def __str__(self):
+        return str(self.id) + "_" + self.name
 
 
 class Factory:
@@ -79,7 +82,7 @@ class Factory:
             out += f"Node: {node.name}\n"
             out += f"  Max Production: {node.prod}\n"
             out += f"  Max Consumption: {node.cons}\n"
-            out += f"  Inputs: {[input_node.name for input_node in node.inputs]}\n"
+            out += f"  Sources: {[input_node.name for input_node in node.sources]}\n"
         
         return out
 

@@ -1,10 +1,17 @@
 from z3 import *
+from factory import *
+
+
+CHEST_PROD = 100
+INSERTER_SPEEDS = [0.79, 0.86, 1.2, 2.5, 5]
+ASSEMBLER_SPEEDS = [0.5, 0.75, 1.25]
 
 def factory_to_constraints(solver, factory):
     """
     Parses the given factory, adding constraints to the given solver.
     solver - solver to add constraints to
     factory - factory to parse constraints from
+    Returns the dictionary of symbols created in the solving process.
     """
 
 
@@ -17,20 +24,20 @@ def factory_to_constraints(solver, factory):
         """
         res = ""
         for attr in attrs:
-            res = res + attr
-        return res
+            res = res + " " +  str(attr)
+        return res.strip()
 
 
     # Loop through all factory nodes and create necessary symbolic variables.
     # Store names in a dictionary for access later.
     symbs = {}
     for node in factory.nodes:
-        if node.name == "inserter" or node.name == "assembler":
-            # Every item produced requires its own symbolic production rate.
-            for item in node.items_produced:
-                symb = to_symb_name(node, item, "p")
-                symbs[symb] = Real(symb)
+        # Every item produced requires its own symbolic production rate.
+        for item in node.items_produced:
+            symb = to_symb_name(node, item, "p")
+            symbs[symb] = Real(symb)
 
+        if node.name == "inserter" or node.name == "assembler":
             # Each has a speed setting.
             symb = to_symb_name(node, "s")
             symbs[symb] = Real(symb)
@@ -45,7 +52,13 @@ def factory_to_constraints(solver, factory):
     for node in factory.nodes:
         match node.name:
             case "chest":
-                continue # Chests do not add constraints.
+                # Chests have a static production rate for items.
+                for item in node.items_produced:
+                    symb_chest_item_prod = (
+                            symbs[to_symb_name(node, item, "p")])
+                    solver.add(symb_chest_item_prod == CHEST_PROD)
+
+
             case "inserter":
                 # An inserter's speed can be any one of severl settings from
                 # the game. Add a disjunction indicating the speed takes on one
@@ -73,7 +86,8 @@ def factory_to_constraints(solver, factory):
                 # to the items produced by all its sources. Currently I assume
                 # an inserter has a single source.
                 for item in node.items_produced:
-                    symb_inserter_item_prod = symbs[to_symb_name(node, "s")]
+                    symb_inserter_item_prod = (
+                            symbs[to_symb_name(node, item, "p")])
 
                     # NOTE: if assuming more than one source, need to aggregate
                     # input production for clauses.
@@ -109,16 +123,15 @@ def factory_to_constraints(solver, factory):
 
                 # If the system is SAT, then the assembler will have no stalls
                 # and the throughput will be the spd / recipe time.
-                # TODO: update node.recipe.item with correct name
                 symb_asm_prod = (
-                        symbs[to_symb_name(node, node.recipe.item, "p")])
+                        symbs[to_symb_name(node, node.recipe.result, "p")])
                 solver.add(symb_asm_prod == symb_asm_spd / node.recipe.time)
 
                 # For every item in the assembler's recipe, create an
                 # inequality mandating the input production rate of that item >=
                 # the overall assembler production rate of recipe item *
                 # ingredient count per recipe.
-                for ingredient, count in node.recipe.quantities:
+                for ingredient, count in node.recipe.ingredients.items():
                     # Determine the aggregate input production rate for this
                     # item.
 
@@ -129,7 +142,7 @@ def factory_to_constraints(solver, factory):
                         source_ingredient_prod_str = (
                                 to_symb_name(source, ingredient, "p"))
                         if source_ingredient_prod_str in symbs:
-                            item_inputs.append(
+                            ingredient_inputs.append(
                                     symbs[source_ingredient_prod_str])
 
                     solver.add(Sum(ingredient_inputs) >= symb_asm_prod * count)
@@ -138,5 +151,54 @@ def factory_to_constraints(solver, factory):
             case name:
                 raise Exception(f"Invalid node type in factory: {name}")
 
+    return symbs
 
 solver = Optimize()
+
+factory = Factory()
+
+chest1 = FactoryNode('chest', prod = {"copper-cable"})
+chest2 = FactoryNode('chest', prod = {"iron-plate"})
+
+inserter1 = FactoryNode('inserter', prod = {"copper-cable"}, sources = {chest1})
+inserter2 = FactoryNode('inserter', prod = {"iron-plate"}, sources = {chest2})
+
+assembler1 = FactoryNode('assembler', prod = {"electronic-circuit"}, sources = {inserter1, inserter2})
+assembler1.recipe = Recipe('electronic-circuit', 0.5, {"copper-cable":3, "iron-plate":1})
+
+chest3 = FactoryNode('chest', prod = {"iron-plate"})
+
+inserter3 = FactoryNode('inserter', prod = {"electronic-circuit"}, sources = {assembler1})
+inserter4 = FactoryNode('inserter', prod = {"iron-plate"}, sources = {chest3})
+
+assembler2 = FactoryNode('assembler', prod = {"display-panel"}, sources = {inserter3, inserter4})
+assembler2.recipe = Recipe('display-panel', 0.5, {"electronic-circuit":1, "iron-plate":1})
+
+factory.add_node(chest1)
+factory.add_node(chest2)
+factory.add_node(chest3)
+factory.add_node(inserter1)
+factory.add_node(inserter2)
+factory.add_node(inserter3)
+factory.add_node(inserter4)
+factory.add_node(assembler1)
+factory.add_node(assembler2)
+
+symbs = factory_to_constraints(solver, factory)
+
+
+print("Symbols:")
+for symb in symbs:
+    print(f"    {symb}")
+
+print("Constraints:")
+for constraint in solver.assertions():
+    print(f"    {constraint}")
+
+print("Solver result:")
+print(f"    {solver.check()}")
+
+print("Solver assignments:")
+model = solver.model()
+for name, var in symbs.items():
+    print(f"    {name} : {model[var]}")
