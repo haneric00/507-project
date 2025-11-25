@@ -2,9 +2,11 @@ from z3 import *
 from factory import *
 
 
-CHEST_PROD = 100
-INSERTER_SPEEDS = [0.79, 0.86, 1.2, 2.5, 5]
-ASSEMBLER_SPEEDS = [0.5, 0.75, 1.25]
+CHEST_PROD = 100 # An arbitrary value, in items/second.
+INSERTER_SPEEDS = [0.79, 0.86, 1.2, 2.5, 5] # in items/second.
+ASSEMBLER_SPEEDS = [0.5, 0.75, 1.25] # dimensionless, divide recipe time by
+                                     # this value to get assembler production
+                                     # time.
 
 def factory_to_constraints(solver, factory):
     """
@@ -197,7 +199,6 @@ factory.add_node(assembler1)
 factory.add_node(assembler2)
 
 symbs = factory_to_constraints(solver, factory)
-
 
 print("Symbols:")
 for symb in symbs:
