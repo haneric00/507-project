@@ -1,4 +1,12 @@
 import itertools
+import json 
+from recipe_map import RecipeDatabase
+
+
+
+recipe_db = RecipeDatabase('recipes.json')
+
+
 
 class Recipe:
 
@@ -9,7 +17,31 @@ class Recipe:
 
     @classmethod
     def from_str(cls, input_str):
-        pass # TODO: implement this!
+        """
+        Takes a recipe name (string) and returns a Recipe object.
+        
+        Args:
+            input_str: Recipe name like "electronic-circuit" or "iron-plate"
+        
+        Returns:
+            Recipe object with result, time, and ingredients populated
+        """
+        # Look up the recipe in the loaded recipe map
+        recipe_data = recipe_db.get_recipe(input_str)
+        
+        if recipe_data is None:
+            raise ValueError(f"Recipe '{input_str}' not found in recipe database")
+        
+        # Create and return a Recipe object
+        return cls(
+            result=input_str,
+            time=recipe_data["time"],
+            ingredients=recipe_data["ingredients"]
+        )
+    
+    def __repr__(self):
+        return f"Recipe(result='{self.result}', time={self.time}, ingredients={self.ingredients})"
+
 
 
 
@@ -47,6 +79,5 @@ class Factory:
         for node in self.nodes:
             out += f"Node: {node.name}\n"
             out += f"  Sources: {[input_node.name for input_node in node.sources]}\n"
-        
+            out += f"  Sources: {[input_node.name for input_node in node.sources]}\n"
         return out
-
