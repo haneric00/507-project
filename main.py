@@ -76,17 +76,35 @@ def factory_to_constraints(solver, factory):
                 # For every item that the inserter that can produce, three
                 # clauses are added:
                 # 1. A disjunction of the two possible throughputs: the speed
-                #   setting or the input production rate of the item.
+                #   setting or the weighted* input production rate of the item.
                 # 2. An inequality limiting the inserter's throughput to at
-                #   most the input production rate of the item.
+                #   most the weighted input production rate of the item.
                 # 3. An inequality limiting the inserter's throughput to at 
                 #   most the speed setting of the inserter.
                 # Together these encode the constraint that the inserter's
                 # throughput for the item is the minimum between these two
                 # values.
+                # *the weighted input production rate is the item's input prod
+                # rate times this inserter's speed as a fraction of the sum of
+                # all inserter speeds for inserters drawing from the source.
                 # NOTE: the items produced by an inserter's sources are equal
                 # to the items produced by all its sources. Currently I assume
                 # an inserter has a single source.
+
+                # First calculate this inserter's weighted fraction of items
+                # produced by its source. NOTE: again assuming 1 source.
+                source_id = next(iter(node.sources)).id
+                all_inserter_speeds = []
+                for other_node in factory.nodes:
+                    if (other_node.name == "inserter" and
+                        source_id in map(lambda node: node.id,
+                                         other_node.sources)):
+                        all_inserter_speeds.append(
+                                symbs[to_symb_name(other_node, "s")])
+
+                input_weight = (symbs[to_symb_name(node, "s")] 
+                                / Sum(*all_inserter_speeds))
+
                 for item in node.items_produced:
                     symb_inserter_item_prod = (
                             symbs[to_symb_name(node, item, "p")])
@@ -100,17 +118,16 @@ def factory_to_constraints(solver, factory):
 
                         
                         solver.add(Or(
-                            symb_inserter_item_prod == symb_source_item_prod,
-                            symb_inserter_item_prod == symb_inserter_spd
-                            ))
+                            symb_inserter_item_prod == (symb_source_item_prod
+                                                        * input_weight),
+                            symb_inserter_item_prod == symb_inserter_spd))
                         
                         solver.add(
-                            symb_inserter_item_prod <= symb_source_item_prod
-                            )
+                            symb_inserter_item_prod <= (symb_source_item_prod
+                                                        * input_weight))
 
                         solver.add(
-                            symb_inserter_item_prod <= symb_inserter_spd
-                            )
+                            symb_inserter_item_prod <= symb_inserter_spd)
 
 
             case "assembler":
