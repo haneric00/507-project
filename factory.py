@@ -56,6 +56,16 @@ class FactoryNode:
         self.sources = sources
         self.factory = None
 
+    # returns module type
+    # 'assembler' for assembling-machine-1, etc.
+    def module_type(self):
+        if 'assembling' in self.name:
+            return 'assembler'
+        elif 'inserter' in self.name:
+            return 'inserter'
+
+        return 'unknown'
+
     
     @staticmethod
     def inserter(ins_type, from_node):
