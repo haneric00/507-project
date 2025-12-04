@@ -39,7 +39,8 @@ def factory_to_constraints(solver, factory):
             symb = to_symb_name(node, item, "p")
             symbs[symb] = Real(symb)
 
-        if node.name == "inserter" or node.name == "assembler":
+        if (node.module_type() == "inserter" 
+            or node.module_type() == "assembler"):
             # Each has a speed setting.
             symb = to_symb_name(node, "s")
             symbs[symb] = Real(symb)
@@ -52,7 +53,7 @@ def factory_to_constraints(solver, factory):
 
     # Add constraints for all factory nodes to the solver.
     for node in factory.nodes:
-        match node.name:
+        match node.module_type():
             case "chest":
                 # Chests have a static production rate for items.
                 for item in node.items_produced:
@@ -96,7 +97,7 @@ def factory_to_constraints(solver, factory):
                 source_id = next(iter(node.sources)).id
                 all_inserter_speeds = []
                 for other_node in factory.nodes:
-                    if (other_node.name == "inserter" and
+                    if (other_node.module_type() == "inserter" and
                         source_id in map(lambda node: node.id,
                                          other_node.sources)):
                         all_inserter_speeds.append(
@@ -168,7 +169,7 @@ def factory_to_constraints(solver, factory):
 
 
             case name:
-                raise Exception(f"Invalid node type in factory: {name}")
+                print(f"Skipping unknown node type {name}")
 
     return symbs
 
@@ -194,7 +195,7 @@ chest2 = FactoryNode('chest', prod = {"iron-plate"})
 inserter1 = FactoryNode('inserter', prod = {"copper-cable"}, sources = {chest1})
 inserter2 = FactoryNode('inserter', prod = {"iron-plate"}, sources = {chest2})
 
-assembler1 = FactoryNode('assembler', prod = {"electronic-circuit"}, sources = {inserter1, inserter2})
+assembler1 = FactoryNode('assembling', prod = {"electronic-circuit"}, sources = {inserter1, inserter2})
 assembler1.recipe = Recipe('electronic-circuit', 0.5, {"copper-cable":3, "iron-plate":1})
 
 chest3 = FactoryNode('chest', prod = {"iron-plate"})
@@ -202,7 +203,7 @@ chest3 = FactoryNode('chest', prod = {"iron-plate"})
 inserter3 = FactoryNode('inserter', prod = {"electronic-circuit"}, sources = {assembler1})
 inserter4 = FactoryNode('inserter', prod = {"iron-plate"}, sources = {chest3})
 
-assembler2 = FactoryNode('assembler', prod = {"display-panel"}, sources = {inserter3, inserter4})
+assembler2 = FactoryNode('assembling', prod = {"display-panel"}, sources = {inserter3, inserter4})
 assembler2.recipe = Recipe('display-panel', 0.5, {"electronic-circuit":1, "iron-plate":1})
 
 factory.add_node(chest1)

@@ -63,7 +63,8 @@ class FactoryNode:
             return 'assembler'
         elif 'inserter' in self.name:
             return 'inserter'
-
+        elif 'chest' in self.name:
+            return 'chest'
         return 'unknown'
 
     
