@@ -27,6 +27,9 @@ class RecipeDatabase:
             # Extract base crafting time
             crafting_time = recipe_data.get("time", 0)
             yield_amount = recipe_data.get("yield", 1)
+
+            if yield_amount is None:
+                yield_amount = 1
             
             # Transform the ingredients list into dictionary format
             ingredients_list = recipe_data.get("ingredients", [])
