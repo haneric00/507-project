@@ -42,19 +42,34 @@ class Recipe:
     def __repr__(self):
         return f"Recipe(result='{self.result}', time={self.time}, ingredients={self.ingredients})"
 
-
-
-
 class FactoryNode:
     id_iter = itertools.count()
 
-    def __init__(self, name, prod = set(), recipe = None, sources = set()):
+    def __init__(self, name, prod = None, recipe = None, sources = None):
         self.id = next(FactoryNode.id_iter)
         self.name = name # Just the component type, e.g. assembler
-        self.items_produced = prod # set of names of items produced
-        self.recipe = Recipe.from_str(recipe) if recipe else None
-        self.sources = sources
+
+        if prod:
+            self.items_produced = prod # set of names of items produced
+        else:
+            self.items_produced = set()
+        
+        if type(recipe) == Recipe:
+            self.recipe = recipe
+        elif type(recipe) == str:
+            self.recipe = Recipe.from_str(recipe)
+
+        if sources:
+            self.sources = sources
+        else:
+            self.sources = set()
         self.factory = None
+
+    def add_prod(self, prod):
+        if type(prod) == set:
+            self.items_produced = self.items_produced.union(prod)
+        else:
+            self.items_produced.add(prod) 
 
     # returns module type
     # 'assembler' for assembling-machine-1, etc.
@@ -65,16 +80,9 @@ class FactoryNode:
             return 'inserter'
 
         return 'unknown'
-
     
-    @staticmethod
-    def inserter(ins_type, from_node):
-        if ins_type == 'normal':
-            return FactoryNode('inserter_normal', prod=[(from_node.prod[0][0], 0.5)], cons=[(from_node.prod[0][0], 0.5)])
-
     def __str__(self):
         return str(self.id) + "_" + self.name
-
 
 class Factory:
     def __init__(self):
@@ -88,6 +96,8 @@ class Factory:
         out = ''
         for node in self.nodes:
             out += f"Node: {node.name}\n"
-            out += f"  Sources: {[input_node.name for input_node in node.sources]}\n"
-            out += f"  Sources: {[input_node.name for input_node in node.sources]}\n"
+            out += f"  Sources: {[str(input_node) for input_node in node.sources]}\n"
+            if node.items_produced:
+                out += f"  Prod: {node.items_produced}\n"
+        
         return out
