@@ -45,7 +45,7 @@ class Recipe:
 class FactoryNode:
     id_iter = itertools.count()
 
-    def __init__(self, name, prod = None, recipe = None, sources = None):
+    def __init__(self, name, prod = None, recipe = None, sources = None, backer=None):
         self.id = next(FactoryNode.id_iter)
         self.name = name # Just the component type, e.g. assembler
 
@@ -64,6 +64,8 @@ class FactoryNode:
         else:
             self.sources = set()
         self.factory = None
+
+        self.backer = backer
 
     def add_prod(self, prod):
         if type(prod) == set:
@@ -96,8 +98,10 @@ class Factory:
     def __repr__(self):
         out = ''
         for node in self.nodes:
-            out += f"Node: {node.name}\n"
+            out += f"Node: {node}\n"
             out += f"  Sources: {[str(input_node) for input_node in node.sources]}\n"
+            if node.backer:
+                out += f"  Data {hex(id(node.backer))} | {node.backer.position}\n"
             if node.items_produced:
                 out += f"  Prod: {node.items_produced}\n"
         
