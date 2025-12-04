@@ -1,6 +1,6 @@
 from z3 import *
 from factory import *
-
+from parser import synthesize_factory_graph
 
 CHEST_PROD = 100 # An arbitrary value, in items/second.
 INSERTER_SPEEDS = [0.79, 0.86, 1.2, 2.5, 5] # in items/second.
@@ -26,7 +26,7 @@ def factory_to_constraints(solver, factory):
         """
         res = ""
         for attr in attrs:
-            res = res + " " +  str(attr)
+            res = res + "_" +  str(attr)
         return res.strip()
 
 
@@ -216,6 +216,10 @@ factory.add_node(inserter4)
 factory.add_node(assembler1)
 factory.add_node(assembler2)
 
+#bp = '0eNqtVNtOwzAM/ZXKzylab7D2gR8BVKWpAUtpUpIUgab+O247tjHGtEm8JbZzjo8v2UCjB+wdmQDVBlr0ylEfyBqoQNm+RxfF99H2pGSjcbqjRhWcNaQiRU4NFPyjITZEvZYB/Z8xxkYN6uBBAClrPFQPG/D0YqSe+I3skIml99g1msxL3En1SgbjBEZ+Ylr8gCoZnwSgCRQIF4T58lmboWvQcYD4RiLzTIZdsXpFH5i1t54WeRtgqDgrbgoBn1Bld+lNMXMsL2qPIXAGfop02Nl3rAf26YAO25oCdux6ltqjgMW85LJlXkoWz/VgXmWHqcTJaiWgs+2sMsQa5ZzVXtg4il9y0gM5Hh0znRKSHwlpyXED5ogkPYGaibPlPsGQHjEwPvUHWufxgG97/TZIzYTsN9Z13OATSeQXSVvtiLOLpBVXohYXod5eMVXJEfZ/TdW0Y/8yU3fXdj9d7yTlP7u/X/R4u+jnZoBXd1LJlv3PI+Cddc5kxW1a5mVZrJOsLFf5OH4BYMmMqg=='
+bp = '0eNqlkttqwzAMQP9Fz07JtSz5lTGC46itwZfMdspK8b9PTjZaujA69hhJ1tGJdIVBzTg5aQJ0V5DCGg/d6xW8PBquUsxwjdAB9x71oKQ5ZpqLkzSYFRAZSDPiB3RFfGOAJsggce2wfFx6M+sBHRWw707SHKShVCZO6AMwmKynZ9YkGrXKqmbXMLhAV+3rXbMw1he9xxBoAp8qHWp7xn6mnArocOxlQE2pA1ceGazhdZYvsrDThC6bFA9IXGHnpF3kOQNtx8UyZAr5MtVNLEb2Q6e80/HoiLQlUj+IjNKhWCuKcqNrxX793RuE8oFA/eV05yr4oJLrGu/fZ64ISHljnaYFbwxRP6WW/1GteX7/Zfv//cd0jylAwNuJMzjTSSyoZl+2dds2L0XVtnkd4ydfxgPr'
+factory = synthesize_factory_graph(bp)
+
 symbs = factory_to_constraints(solver, factory)
 
 print("Symbols:")
@@ -231,5 +235,5 @@ print(f"    {solver.check()}")
 
 print("Solver assignments:")
 model = solver.model()
-for name, var in symbs.items():
+for name, var in sorted(symbs.items()):
     print(f"    {name} : {model[var]}")
