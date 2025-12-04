@@ -64,7 +64,7 @@ for entity in blueprint.entities:
                 
         
     if type(entity) == AssemblingMachine:
-        # recipe = Recipe.from_str(entity.recipe)
+        recipe = Recipe.from_str(entity.recipe)
         entity.factory_node = FactoryNode(entity.name, prod=recipe.result, recipe=recipe)
     
     elif type(entity) == InfinityContainer:
