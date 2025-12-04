@@ -26,6 +26,7 @@ class RecipeDatabase:
             
             # Extract base crafting time
             crafting_time = recipe_data.get("time", 0)
+            yield_amount = recipe_data.get("yield", 1)
             
             # Transform the ingredients list into dictionary format
             ingredients_list = recipe_data.get("ingredients", [])
@@ -37,6 +38,9 @@ class RecipeDatabase:
                 if ingredient_id and amount is not None:
                     ingredients_map[ingredient_id] = amount
             
+            if yield_amount > 1:
+               crafting_time = crafting_time / yield_amount
+           
             # Build the final simplified recipe structure
             simplified_recipe = {
                 "time": crafting_time,
