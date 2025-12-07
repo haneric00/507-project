@@ -9,14 +9,6 @@ RIGHT   = 4
 DOWN    = 8
 LEFT    = 12
 
-class SourcedEntity:
-    def __init__(self, entity):
-        self.entity = entity
-        self.sources = []
-    
-    def add_source(self, source):
-        self.sources.append(source)
-
 def find_source_assembler(node):
     #print(node)
     if node.name in ['infinity-chest', 'assembling-machine-1']:
@@ -53,15 +45,16 @@ def synthesize_factory_graph(bp_string):
             
             target = blueprint.find_entities_filtered(position = entity.position - target_pos)
 
-            print(f'finding feed target for position {entity.position + target_pos}, {target}')
+            print(f'finding feed target for position {entity.position + target_pos}, {target[0].name}')
 
             # These nodes "feed" into something, so add to their sources
             # Either: we are an inserter and feeding into something,
             # or we are a transport belt feeding into another transport belt
             if target and (type(entity) in [Inserter, Loader] or (type(entity) == TransportBelt and type(target[0]) == TransportBelt)):
                 target[0].sources.add(entity)
+                entity.sinks.add(target[0])
                 print(f'{type(entity)} {hex(id(entity))} -> {type(target[0])} {id(target[0])} add feed target')
-                print(target[0].sources)
+                #print(target[0].sources)
 
             # add source target
             if target and type(entity) in [Inserter, Loader]:
@@ -69,6 +62,7 @@ def synthesize_factory_graph(bp_string):
                 if source:
                     print(f'{type(source[0])} {id(source[0])} -> {type(entity)} {id(entity)} add source target')
                     entity.sources.add(source[0])
+                    source[0].sinks.add(entity)
                     
             
         if type(entity) == AssemblingMachine:
@@ -93,7 +87,7 @@ def synthesize_factory_graph(bp_string):
         for source in entity.sources:
             node.sources.add(source.factory_node)
         factory.add_node(node)
-        print(node, node.sources)
+        print('NODE', node, node.sources, node.sinks)
         
     # add prod types for inserters and belts
     for entity in blueprint.entities:
@@ -103,6 +97,7 @@ def synthesize_factory_graph(bp_string):
             source = find_source_assembler(node)
             if source:
                 node.add_prod(source.items_produced)
+                node.add_cons(source.items_produced)
 
     #print(factory)
     return factory

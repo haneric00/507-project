@@ -15,29 +15,56 @@ def factory_to_constraints(solver, factory):
     factory - factory to parse constraints from
     Returns the dictionary of symbols created in the solving process.
     """
-
-
-    def to_symb_name(*attrs):
-        """
-        Helper for converting node attributes to a symbolic variable name.
-        Should be used in one of the two following ways:
-        - to_symb_name(node.id, item, "p")
-        - to_symb_name(node.id, "s")
-        """
-        res = ""
-        for attr in attrs:
-            res = res + "_" +  str(attr)
-        return res.strip()
-
-
+    
     # Loop through all factory nodes and create necessary symbolic variables.
     # Store names in a dictionary for access later.
     symbs = {}
+
+    def add_symb(name):
+        symbs[name] = Real(name)
+    
+    for node in factory.nodes:
+        print(f'Info for node {node}:')
+        print(f'  Consumes from {node.sources}')
+        print(f'  Sinks to {node.sinks}')
+        print(f'  Produces {node.prod}')
+
+        add_symb(node.prod_symb)
+
+        for item in node.items_consumed:
+            add_symb(node.cons_symb(item))
+    
+    # add constraint: every node's consumption is <= than the production of all upstream nodes
+    for node in factory.nodes:
+        for item in node.items_consumed:
+            cons = node.cons_symb(item)
+
+            items_produced = [hex(id(node)) for node in node.sources]
+
+            print(node, items_produced)
+            #solver.add()
+
+
+    return symbs
     for node in factory.nodes:
         # Every item produced requires its own symbolic production rate.
-        for item in node.items_produced:
-            symb = to_symb_name(node, item, "p")
-            symbs[symb] = Real(symb)
+        symb = to_symb_name(node, "p")
+        symbs[symb] = Real(symb)
+
+        prod = to_symb_name(node, "prod")
+        symbs[prod] = Real(prod)
+
+        prod_max = to_symb_name(node, "prod_max")
+        symbs[prod_max] = Real(prod_max)
+
+        solver.add(prod <= prod_max)
+
+        for item in node.items_consumed:
+            cons = to_symb_name(node, item, "cons")
+            symbs[cons] = Real(cons)
+
+            cons_max = to_symb_name(node, item, "cons_max")
+            symbs[cons_max] = Real(cons_max)
 
         if (node.module_type() == "inserter" 
             or node.module_type() == "assembler"):
@@ -53,6 +80,21 @@ def factory_to_constraints(solver, factory):
 
     # Add constraints for all factory nodes to the solver.
     for node in factory.nodes:
+
+        # add max consumption constraint for downstream nodes
+        item_prod = symbs[to_symb_name(node, "prod")]
+        item_prod_max = symbs[to_symb_name(node, "prod_max")]
+
+        print('node', node)
+        if node.sinks:
+            print('sinks', node.sinks, node.sinks.pop().items_consumed)
+
+        consumptions = [symbs[to_symb_name(sink, node.prod, "cons")] for sink in node.sinks if to_symb_name(sink, node.prod, "cons") in symbs]
+        consumptions_max = [symbs[to_symb_name(sink, node.prod, "cons_max")] for sink in node.sinks if to_symb_name(sink, node.prod, "cons_max") in symbs]
+
+        solver.add(item_prod >= sum(consumptions))
+        solver.add(item_prod_max >= sum(consumptions_max))
+
         match node.module_type():
             case "chest":
                 # Chests have a static production rate for items.
@@ -61,6 +103,9 @@ def factory_to_constraints(solver, factory):
                             symbs[to_symb_name(node, item, "p")])
                     solver.add(symb_chest_item_prod == CHEST_PROD)
 
+                    symb_chest_item_prod = (
+                            symbs[to_symb_name(node, item, "prod")])
+                    solver.add(symb_chest_item_prod == CHEST_PROD)
 
             case "inserter":
                 # An inserter's speed can be any one of severl settings from
@@ -69,6 +114,9 @@ def factory_to_constraints(solver, factory):
                 # TODO: update INSERTER_SPEEDS, match real const name
                 spd_clauses = []
                 symb_inserter_spd = symbs[to_symb_name(node, "s")]
+
+                symb_inserter_prod = symbs[to_symb_name(node, "prod")]
+
                 for spd in INSERTER_SPEEDS:
                     spd_clauses.append(symb_inserter_spd == spd)
                 solver.add(Or(*spd_clauses))
@@ -219,6 +267,8 @@ factory.add_node(assembler2)
 #bp = '0eNqtVNtOwzAM/ZXKzylab7D2gR8BVKWpAUtpUpIUgab+O247tjHGtEm8JbZzjo8v2UCjB+wdmQDVBlr0ylEfyBqoQNm+RxfF99H2pGSjcbqjRhWcNaQiRU4NFPyjITZEvZYB/Z8xxkYN6uBBAClrPFQPG/D0YqSe+I3skIml99g1msxL3En1SgbjBEZ+Ylr8gCoZnwSgCRQIF4T58lmboWvQcYD4RiLzTIZdsXpFH5i1t54WeRtgqDgrbgoBn1Bld+lNMXMsL2qPIXAGfop02Nl3rAf26YAO25oCdux6ltqjgMW85LJlXkoWz/VgXmWHqcTJaiWgs+2sMsQa5ZzVXtg4il9y0gM5Hh0znRKSHwlpyXED5ogkPYGaibPlPsGQHjEwPvUHWufxgG97/TZIzYTsN9Z13OATSeQXSVvtiLOLpBVXohYXod5eMVXJEfZ/TdW0Y/8yU3fXdj9d7yTlP7u/X/R4u+jnZoBXd1LJlv3PI+Cddc5kxW1a5mVZrJOsLFf5OH4BYMmMqg=='
 bp = '0eNqlkttqwzAMQP9Fz07JtSz5lTGC46itwZfMdspK8b9PTjZaujA69hhJ1tGJdIVBzTg5aQJ0V5DCGg/d6xW8PBquUsxwjdAB9x71oKQ5ZpqLkzSYFRAZSDPiB3RFfGOAJsggce2wfFx6M+sBHRWw707SHKShVCZO6AMwmKynZ9YkGrXKqmbXMLhAV+3rXbMw1he9xxBoAp8qHWp7xn6mnArocOxlQE2pA1ceGazhdZYvsrDThC6bFA9IXGHnpF3kOQNtx8UyZAr5MtVNLEb2Q6e80/HoiLQlUj+IjNKhWCuKcqNrxX793RuE8oFA/eV05yr4oJLrGu/fZ64ISHljnaYFbwxRP6WW/1GteX7/Zfv//cd0jylAwNuJMzjTSSyoZl+2dds2L0XVtnkd4ydfxgPr'
 factory = synthesize_factory_graph(bp)
+
+print(factory)
 
 symbs = factory_to_constraints(solver, factory)
 

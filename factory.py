@@ -6,7 +6,17 @@ from recipe_map import RecipeDatabase
 
 recipe_db = RecipeDatabase('recipes.json')
 
-
+def to_symb_name(*attrs):
+        """
+        Helper for converting node attributes to a symbolic variable name.
+        Should be used in one of the two following ways:
+        - to_symb_name(node.id, item, "p")
+        - to_symb_name(node.id, "s")
+        """
+        res = ""
+        for attr in attrs:
+            res = res + "_" +  str(attr)
+        return res.strip()
 
 class Recipe:
 
@@ -59,6 +69,11 @@ class FactoryNode:
         elif type(recipe) == str:
             self.recipe = Recipe.from_str(recipe)
 
+        if recipe:
+            self.items_consumed = self.recipe.ingredients.keys()
+        else:
+            self.items_consumed = set()
+
         if sources:
             self.sources = sources
         else:
@@ -70,8 +85,29 @@ class FactoryNode:
     def add_prod(self, prod):
         if type(prod) == set:
             self.items_produced = self.items_produced.union(prod)
+            print('foo')
         else:
-            self.items_produced.add(prod) 
+            self.items_produced.add(prod)
+
+    @property
+    def prod(self):
+
+        print(self, self.items_produced)
+
+        if not self.items_produced:
+            return 'EMPTY'
+
+        return self.items_produced.pop()
+    
+    def add_cons(self, cons):
+        if type(cons) == set:
+            self.items_consumed = self.items_consumed.union(cons)
+        else:
+            self.items_consumed.add(cons) 
+
+    @property
+    def sinks(self):
+        return set([x.factory_node for x in self.backer.sinks])
 
     # returns module type
     # 'assembler' for assembling-machine-1, etc.
@@ -84,8 +120,18 @@ class FactoryNode:
             return 'chest'
         return 'unknown'
     
-    def __str__(self):
+    def __repr__(self):
         return str(self.id) + "_" + self.name
+    
+    @property
+    def prod_symb(self):
+        return to_symb_name(self, self.prod, 'prod')
+    
+    def cons_symb(self, item):
+        if item in self.items_consumed:
+            return to_symb_name(self, item, 'cons')
+        else:
+            return None
 
 class Factory:
     def __init__(self):
