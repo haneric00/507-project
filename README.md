@@ -26,6 +26,6 @@ pip install -r requirements.txt
 
 ## Team
 Hayden Feeney
-Pranav GolGopalkrishnan
+Pranav Gopalkrishnan
 Eric Han
 Minh-Trien Vuong

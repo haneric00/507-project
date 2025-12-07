@@ -3,10 +3,7 @@ import json
 from recipe_map import RecipeDatabase
 
 
-
 recipe_db = RecipeDatabase('recipes.json')
-
-
 
 class Recipe:
 

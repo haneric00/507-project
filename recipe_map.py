@@ -94,22 +94,7 @@ class RecipeDatabase:
         return f"RecipeDatabase({len(self.recipes)} recipes loaded from '{self.filename}')"
 
 
-# Example usage and testing
 if __name__ == "__main__":
-    # Create the database
+
     db = RecipeDatabase('recipes.json')
-    
-    # Print summary
     db.print_summary(3)
-    
-    # Example lookups
-    print("\n=== Example Lookups ===")
-    db.print_recipe("accumulator")
-    
-    print(f"\n=== Database Info ===")
-    print(db)
-    print(f"Has 'iron-plate' recipe: {db.has_recipe('iron-plate')}")
-    print(f"Has 'iron-ore' recipe: {db.has_recipe('iron-ore')}")
-    
-    # Use 'in' operator
-    print(f"'electronic-circuit' in database: {'electronic-circuit' in db}")
